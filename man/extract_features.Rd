@@ -2,6 +2,7 @@
 % Please edit documentation in R/features.R
 \name{extract_features}
 \alias{extract_features}
+\alias{extract_features_cpp}
 \title{Extract features from time series}
 \usage{
 extract_features(
@@ -10,6 +11,8 @@ extract_features(
   intervals,
   funs = list(mean = mean, sd = sd, slope = slope)
 )
+
+extract_features_cpp(x, tsid, intervals)
 }
 \arguments{
 \item{x}{time series (data.frame)}

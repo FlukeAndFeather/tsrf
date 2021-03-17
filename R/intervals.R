@@ -32,7 +32,7 @@ sample_intervals <- function(m) {
 
   # i1, i2: interval start and end indices
   i1 <- as.integer(runif(m2) * (m - w) + 1)
-  i2 <- i1 + w
+  i2 <- i1 + w - 1
 
   cbind(i1, i2)
 }

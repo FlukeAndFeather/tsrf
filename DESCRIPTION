@@ -13,7 +13,9 @@ Description: Classify time series using the time series random
     extracted from randomly sampled intervals within each time series.
 License: MIT + file LICENSE
 Imports: 
-    caret
+    caret,
+    Rcpp,
+    RcppParallel
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
@@ -22,3 +24,5 @@ Language: es
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+LinkingTo: 
+    Rcpp

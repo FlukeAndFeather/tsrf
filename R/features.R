@@ -1,9 +1,18 @@
+assemble_feat_names <- function(funs, nintervals, vars) {
+  expand.grid(funs,
+              as.character(seq(nintervals)),
+              vars,
+              stringsAsFactors = FALSE) %>%
+    apply(1, paste, collapse = "_")
+}
+
 #' Extract features from time series
 #'
 #' Calculate summary statistics of randomly sampled intervals in a time series
 #'
 #' @param x time series (data.frame)
-#' @param tsid name of time series identifier column in \code{x} (character scalar)
+#' @param tsid name of time series identifier column in \code{x} (character
+#'   scalar)
 #' @param intervals start and end indices of intervals (2 column integer matrix;
 #'   see \code{\link{sample_intervals}})
 #' @param funs list of summary functions (\code{\link{mean}}, \code{\link{sd}},
@@ -36,23 +45,51 @@ extract_features <- function(
 
   x_data <- x[-match(tsid, names(x))]
   fun_col_int <- expand.grid(names(funs),
-                             setdiff(names(x), tsid),
                              as.character(seq(nrow(intervals))),
+                             setdiff(names(x), tsid),
                              stringsAsFactors = FALSE)
-  feat_names <- apply(fun_col_int, 1, paste, collapse = "_")
+  feat_names <- assemble_feat_names(
+    names(funs),
+    nrow(intervals),
+    setdiff(names(x), tsid)
+  )
   feats <- apply(
     fun_col_int,
     1,
     function(row) {
       fun <- funs[[row[1]]]
-      col <- x_data[[row[2]]]
-      int <- intervals[as.integer(row[3]), ]
+      int <- intervals[as.integer(row[2]), ]
+      col <- x_data[[row[3]]]
       tapply(col, x[[tsid]], function(col_sub) fun(col_sub[int[1]:int[2]]))
     }
   )
+  # Handle edge case when there's only one time series (one row matrix turns
+  # into a vector)
   if (!is.matrix(feats)) {
     feats <- t(feats)
   }
+  feats <- cbind(unique(x[[tsid]]), as.data.frame(feats))
+  colnames(feats) <- c(tsid, feat_names)
+
+  feats
+}
+
+#' @rdname extract_features
+#' @export
+extract_features_cpp <- function(x, tsid, intervals) {
+  x_data <- as.matrix(x[-match(tsid, names(x))])
+  tslen <- as.integer(sum(x[[tsid]] == x[[tsid]][1]))
+  stopifnot(
+    is.integer(tslen),
+    is.matrix(x_data),
+    is.matrix(intervals)
+  )
+  feats <- tsfeats(tslen, x_data, intervals)
+  feat_names <- assemble_feat_names(
+    c("mean", "sd", "slope"),
+    nrow(intervals),
+    setdiff(names(x), tsid)
+  )
   feats <- cbind(unique(x[[tsid]]), as.data.frame(feats))
   colnames(feats) <- c(tsid, feat_names)
 
