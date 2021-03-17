@@ -1,0 +1,93 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# tsrf
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![CRAN status](https://www.r-pkg.org/badges/version/tsrf)](https://CRAN.R-project.org/package=tsrf)
+<!-- badges: end -->
+
+tsrf provides time series classification tools based on the Time Series Random Forest algorithm by [Deng et al. (2013)](https://doi.org/10.1016/j.ins.2013.02.030)
+
+## Installation
+
+You can install the development version of `tsrf` from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("FlukeAndFeather/tsrf")
+```
+## Example
+
+This example demonstrates how `tsrf` extracts features, fits a model, and makes predictions. First, generate 10 time series from two different underlying classes
+
+```{r create_ts}
+library(tsrf)
+tsnum <- 10
+tslbl <- factor(rep(c("A", "B"), each = tsnum))
+tslen <- 100
+Aval <- replicate(tsnum, rnorm(tslen))
+Bval <- replicate(tsnum, c(rnorm(tslen / 2), cumsum(rnorm(tslen / 2, 0.1))))
+tsdat <- data.frame(
+  id = rep(1:(2 * tsnum), each = tslen),
+  val = c(as.numeric(Aval), as.numeric(Bval))
+)
+summary(tsdat)
+```
+
+Time series from the first class (red) have no trend but the second half of time series from the second class trend upwards.
+
+```{r plot_ts}
+plot(seq(tslen), tsdat$val[tsdat$id == 1],
+     type = "l", col = "#FF000088", ylim = range(tsdat$val))
+for (i in 2:(tsnum * 2)) {
+  lines(seq(tslen), tsdat$val[tsdat$id == i],
+        col = if (i <= tsnum) "#FF000088" else "#0000FF88")
+}
+```
+
+The features extracted from each time series are simple summary statistics (mean, sd, slope) of randomly sampled intervals. Points closer to the middle of the time series will end up in more intervals. `extract_features()` converts long format time series data to wide format, with one row per time series and a column for each feature.
+
+```{r feat_ts}
+tsints <- sample_intervals(tslen)
+tsfeat <- extract_features(tsdat, "id", tsints)
+
+prevalence <- sapply(
+  seq(tslen),
+  function(i) sum(i >= tsints[, 1] & i <= tsints[, 2]) / nrow(tsints)
+)
+plot(seq(tslen), prevalence, type = "l", xlab = "index")
+
+head(tsfeat)
+```
+
+After sampling intervals and extracting features, fit the model and make predictions.
+
+```{r fit_pred}
+# Split data
+train_index <- sample(seq(nrow(tsfeat)), 0.9 * nrow(tsfeat))
+train_feat <- tsfeat[train_index, ]
+test_feat <- tsfeat[-train_index, ]
+train_lbl <- tslbl[train_index]
+test_lbl <- tslbl[-train_index]
+
+# Train model
+tsrf <- train_tsrf(train_feat, train_lbl, "id")
+
+# Test predictions
+pred_feat <- predict(tsrf, test_feat)
+caret::confusionMatrix(pred_feat, test_lbl)
+```
