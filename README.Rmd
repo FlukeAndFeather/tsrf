@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 [![CRAN status](https://www.r-pkg.org/badges/version/tsrf)](https://CRAN.R-project.org/package=tsrf)
 <!-- badges: end -->
 
-tsrf provides time series classification tools based on the Time Series Random Forest algorithm by [Deng et al. (2013)](https://doi.org/10.1016/j.ins.2013.02.030)
+tsrf provides time series classification tools based on the Time Series Random Forest algorithm by [Deng et al. (2013)](https://doi.org/10.1016/j.ins.2013.02.030).
 
 ## Installation
 
@@ -36,23 +36,25 @@ This example demonstrates how `tsrf` extracts features, fits a model, and makes 
 
 ```{r create_ts}
 library(tsrf)
-tsnum <- 10
+set.seed(1733)
+tsnum <- 20
 tslbl <- factor(rep(c("A", "B"), each = tsnum))
-tslen <- 100
+tslen <- 250
 Aval <- replicate(tsnum, rnorm(tslen))
-Bval <- replicate(tsnum, c(rnorm(tslen / 2), cumsum(rnorm(tslen / 2, 0.1))))
-tsdat <- data.frame(
+Bval <- replicate(tsnum, c(rnorm(tslen / 2), cumsum(rnorm(tslen / 2, 0.5, 0.2))))
+tsdat <- tibble::as_tibble(data.frame(
   id = rep(1:(2 * tsnum), each = tslen),
   val = c(as.numeric(Aval), as.numeric(Bval))
-)
-summary(tsdat)
+))
+tibble::as_tibble(tsdat)
 ```
 
 Time series from the first class (red) have no trend but the second half of time series from the second class trend upwards.
 
 ```{r plot_ts}
 plot(seq(tslen), tsdat$val[tsdat$id == 1],
-     type = "l", col = "#FF000088", ylim = range(tsdat$val))
+     type = "l", col = "#FF000088", ylim = range(tsdat$val),
+     xlab = "index", ylab = "value")
 for (i in 2:(tsnum * 2)) {
   lines(seq(tslen), tsdat$val[tsdat$id == i],
         col = if (i <= tsnum) "#FF000088" else "#0000FF88")
@@ -71,7 +73,7 @@ prevalence <- sapply(
 )
 plot(seq(tslen), prevalence, type = "l", xlab = "index")
 
-head(tsfeat)
+tibble::as_tibble(tsfeat)
 ```
 
 After sampling intervals and extracting features, fit the model and make predictions.
