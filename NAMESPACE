@@ -2,8 +2,10 @@
 
 export(extract_features)
 export(extract_features_cpp)
+export(extract_features_par)
 export(sample_intervals)
 export(slope)
 export(train_tsrf)
 importFrom(Rcpp,sourceCpp)
+importFrom(foreach,"%dopar%")
 useDynLib(tsrf, .registration = TRUE)

@@ -3,6 +3,7 @@
 \name{extract_features}
 \alias{extract_features}
 \alias{extract_features_cpp}
+\alias{extract_features_par}
 \title{Extract features from time series}
 \usage{
 extract_features(
@@ -13,24 +14,40 @@ extract_features(
 )
 
 extract_features_cpp(x, tsid, intervals)
+
+extract_features_par(x, tsid, intervals, ncores)
 }
 \arguments{
 \item{x}{time series (data.frame)}
 
-\item{tsid}{name of time series identifier column in \code{x} (character scalar)}
+\item{tsid}{name of time series identifier column in \code{x} (character
+scalar)}
 
 \item{intervals}{start and end indices of intervals (2 column integer matrix;
 see \code{\link{sample_intervals}})}
 
 \item{funs}{list of summary functions (\code{\link{mean}}, \code{\link{sd}},
-and \code{\link{slope}} by default)}
+and \code{\link{slope}} by default). Only used by \code{extract_features()}.}
+
+\item{ncores}{number of cores to use}
 }
 \value{
 an MxN matrix where M is the length of \code{intervals} and N is the
 length of \code{funs}.
 }
 \description{
-Calculate summary statistics of randomly sampled intervals in a time series
+Calculate summary statistics of randomly sampled intervals in time series for
+classification in a time series random forest.
+}
+\details{
+\code{extract_features()} is an R implementation and is therefore slow for larger
+datasets. \code{extract_features_cpp()} uses C++ to improve feature extraction
+performance, but the summary statistics (\code{\link{mean}},
+\code{\link{sd}}, \code{\link{slope}}) are inflexible.
+\code{extract_features_par()} applies \code{extract_features_cpp()} in parallel.
+\code{extract_features_par()} is faster than \code{extract_features_cpp()} when
+extracting features from very large datasets or using many cores. For smaller
+datasets or fewer cores, \code{extract_features_cpp()} can be faster.
 }
 \examples{
 ts_len <- 100

@@ -12,7 +12,7 @@ tsdat <- data.frame(
 
 # Extract features
 tsints <- sample_intervals(tslen)
-tsfeat <- extract_features(tsdat, "id", tsints)
+tsfeat <- extract_features_cpp(tsdat, "id", tsints)
 
 # Split data
 train_index <- sample(seq(nrow(tsfeat)), 0.9 * nrow(tsfeat))
